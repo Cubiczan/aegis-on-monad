@@ -268,6 +268,7 @@ export interface ZerionStatus {
   address?: string
   lastError?: string
   portfolio?: ZerionPortfolio
+  source?: 'engine-live' | 'serverless-live' | 'static-snapshot' | 'mirror'
 }
 
 export interface AegisStats {

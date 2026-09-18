@@ -121,9 +121,9 @@ export function PortfolioTab({ api }: { api: AegisApi }) {
       <Panel
         title="Live treasury import — Zerion API"
         right={
-          <span className={`flex items-center gap-1.5 font-mono text-[10px] ${z.live ? 'text-teal-400' : z.enabled ? 'text-amber-400' : 'text-red-400'}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${z.live ? 'animate-pulse bg-teal-400' : z.enabled ? 'bg-amber-400' : 'bg-red-400'}`} />
-            {z.live ? 'LIVE · api.zerion.io' : z.enabled ? 'KEY SET · not yet fetched' : 'NO API KEY'}
+          <span className={`flex items-center gap-1.5 font-mono text-[10px] ${z.live ? 'text-teal-400' : z.source === 'static-snapshot' ? 'text-amber-400' : z.enabled ? 'text-amber-400' : 'text-red-400'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${z.live ? 'animate-pulse bg-teal-400' : z.source === 'static-snapshot' || z.enabled ? 'bg-amber-400' : 'bg-red-400'}`} />
+            {z.live ? 'LIVE · api.zerion.io' : z.source === 'static-snapshot' ? 'SNAPSHOT · local demo' : z.enabled ? 'KEY SET · not yet fetched' : 'NO API KEY'}
           </span>
         }
       >
@@ -157,6 +157,13 @@ export function PortfolioTab({ api }: { api: AegisApi }) {
             Until then the gate runs on desk-local NAV (mirror mode).
           </div>
         )}
+        {api.mode === 'local' && (
+          <div className="mt-2 rounded-md border border-violet-500/30 bg-violet-950/10 px-3 py-2 font-mono text-[11px] leading-5 text-violet-300/90">
+            LOCAL DEMO MODE — the engine service isn&apos;t connected, so this tab runs the browser-local engine.
+            A bundled public-data snapshot is loaded; live fetches go through the <span className="text-violet-200">/api/zerion</span> serverless proxy
+            (works when ZERION_API_KEY is set on the deployment).
+          </div>
+        )}
         <div className="mt-2 text-[11px] leading-5 text-zinc-600">
           Any wallet — ENS or 0x — is pulled live from Zerion v1 (Basic auth, key stays server-side).
           The imported NAV recalibrates the CHP risk envelope below, so the gate&apos;s dollar caps always scale with the real treasury the agents are spending from.
@@ -181,10 +188,10 @@ export function PortfolioTab({ api }: { api: AegisApi }) {
           {/* headline stats */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat
-              label="Live NAV"
+              label="NAV"
               value={usd(pf.totalUSD)}
               tone="ok"
-              sub={`fetched ${ago(pf.fetchedAt)} · ${pf.latencyMs}ms${nowTick % 2 ? '' : ''}`}
+              sub={`${z.source === 'static-snapshot' ? 'bundled snapshot' : z.source === 'serverless-live' ? 'live · serverless proxy' : 'live'} · fetched ${ago(pf.fetchedAt)} · ${pf.latencyMs}ms`}
             />
             <Stat label="1d change" value={<Chg v={pf.changes.percent?.['1d']} />} sub={pf.changes.absolute?.['1d'] !== undefined ? `${pf.changes.absolute['1d'] > 0 ? '+' : ''}${usd(pf.changes.absolute['1d'])} · 1d` : 'Zerion exposes 1d window'} />
             <Stat

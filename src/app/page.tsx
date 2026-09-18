@@ -57,9 +57,9 @@ export default function Home() {
           </div>
 
           <div className="order-2 ml-auto flex items-center gap-3 font-mono text-[10px] text-zinc-500 sm:order-3">
-            <span className={`flex items-center gap-1.5 ${api.connected ? 'text-emerald-400' : 'text-red-400'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${api.connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              {api.connected ? 'ENGINE LIVE' : 'CONNECTING…'}
+            <span className={`flex items-center gap-1.5 ${api.connected ? (api.mode === 'live' ? 'text-emerald-400' : 'text-violet-300') : 'text-red-400'}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${api.connected ? (api.mode === 'live' ? 'bg-emerald-400' : 'bg-violet-400') : 'bg-red-400'}`} />
+              {api.connected ? (api.mode === 'live' ? 'ENGINE LIVE' : 'LOCAL DEMO') : 'CONNECTING…'}
             </span>
             {s && (
               <span className="hidden sm:inline">block {s.desk.blockHeight.toLocaleString()}</span>
@@ -77,8 +77,10 @@ export default function Home() {
               <span className="text-amber-400/90">anchors: {s.anchors.length}</span>
               <span className="text-zinc-500">council LLM: {s.stats.councilLlm} · heuristic: {s.stats.councilHeuristic}</span>
               <span className="text-emerald-400/90">stopped: ${Math.round(s.stats.exploitsStoppedUSD).toLocaleString()}</span>
-              {s.zerion.live && s.zerion.portfolio && (
-                <span className="text-teal-400">zerion LIVE: {s.zerion.portfolio.address.startsWith('0x') ? `${s.zerion.portfolio.address.slice(0, 6)}…${s.zerion.portfolio.address.slice(-4)}` : s.zerion.portfolio.address} · ${Math.round(s.zerion.portfolio.totalUSD).toLocaleString()} NAV</span>
+              {(s.zerion.live || s.zerion.source === 'static-snapshot') && s.zerion.portfolio && (
+                <span className={s.zerion.source === 'static-snapshot' ? 'text-amber-400/90' : 'text-teal-400'}>
+                  zerion {s.zerion.source === 'static-snapshot' ? 'SNAPSHOT' : 'LIVE'}: {s.zerion.portfolio.address.startsWith('0x') ? `${s.zerion.portfolio.address.slice(0, 6)}…${s.zerion.portfolio.address.slice(-4)}` : s.zerion.portfolio.address} · ${Math.round(s.zerion.portfolio.totalUSD).toLocaleString()} NAV
+                </span>
               )}
               <span className="hidden text-zinc-600 md:inline">{s.desk.rpcLabel}</span>
             </div>
@@ -90,7 +92,9 @@ export default function Home() {
         {!s ? (
           <div className="flex h-[60vh] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-violet-400" />
-            <div className="font-mono text-[12px] text-zinc-500">linking to aegis-engine on :3003…</div>
+            <div className="font-mono text-[12px] text-zinc-500">
+              {api.mode === 'local' ? 'engine service unreachable — running the browser-local demo engine…' : 'linking to aegis-engine on :3003…'}
+            </div>
           </div>
         ) : (
           <>
