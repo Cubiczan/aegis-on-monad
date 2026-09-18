@@ -1,0 +1,9 @@
+# Keep the Vercel upload lean — build only needs the Next.js app
+/media
+/download
+/scripts
+/db
+/agent-ctx
+*.log
+worklog.md
+*.bundle
