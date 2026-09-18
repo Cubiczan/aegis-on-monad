@@ -14,24 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Aegis on Monad — Trust Layer for Capital-Moving AI Agents",
+  description: "ERC-8004 agent registry, fail-closed CHP policy gate, HMAC-chained proof ledger with onchain anchors, and an autonomous circuit breaker — live on a multi-agent trading desk.",
+  keywords: ["Monad", "ERC-8004", "AI agents", "policy gate", "circuit breaker", "trust layer", "Monad testnet"],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "Aegis on Monad",
+    description: "The trust layer for AI agents that move capital — live demo.",
+    siteName: "Aegis",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
   },
 };
 

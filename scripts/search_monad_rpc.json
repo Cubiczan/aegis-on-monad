@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://chainlist.org",
+    "name": "Monad Testnet RPC and Chain settings",
+    "snippet": "Find the best Monad Testnet RPC to connect to your wallets and Web3 middleware providers. node services, RPC endpoint s, custom tools for blockchains. ) through ...",
+    "host_name": "chainlist.org",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.quicknode.com",
+    "name": "Top 7 Monad RPC Providers",
+    "snippet": "Public RPC endpoints that ... Developers can easily access the Monad Testnet via specific RPC endpoints designed for testing and development purposes.",
+    "host_name": "www.quicknode.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.monad.xyz",
+    "name": "Network Information - Testnet - Monad Documentation",
+    "snippet": "​. Public RPC Endpoints ; https://testnet-rpc.monad.xyz wss://testnet-rpc.monad.xyz, QuickNode, 50 rps ; https://rpc.ankr.com/monad_testnet, Ankr, 300 reqs / 10s",
+    "host_name": "docs.monad.xyz",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://chainstack.com",
+    "name": "Monad RPC Nodes and APIs",
+    "snippet": "If you need a free public endpoint for quick testing, use the official community RPC (rate-limited and not suitable for production).",
+    "host_name": "chainstack.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.comparenodes.com",
+    "name": "Monad Public RPC Endpoints & Independent Performance",
+    "snippet": "45 public Monad RPC endpoints with independent on-demand latency from 30 global locations including Jakarta and N. California.",
+    "host_name": "www.comparenodes.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.alchemy.com",
+    "name": "Monad Testnet RPC URL & devtools",
+    "snippet": "Alchemy provides Monad testnet RPC endpoints , a range of debugging tools, rich data APIs, and more, so you can test your code with confidence before shipping ...",
+    "host_name": "www.alchemy.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]
