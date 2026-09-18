@@ -5,9 +5,17 @@
 **The trust layer for AI agents that move capital.**
 Metropolis Hackathon · Track 4 — Trust, Identity & AI Infrastructure ($30,000 pool).
 
+## 🔴 Live demo
+
+**▶ https://preview-c-6aad749e-14810412-7397ac081f6b.space-z.ai/**
+
+No setup, no keys — open it and drive the full prototype: run the multi-agent trading desk, import any wallet (ENS or 0x) live from Zerion and watch the CHP caps recalibrate, verify the HMAC proof chain, and fire the Sentinel drills (including the hostile prompt-injection drill where the desk locks itself before a human can react).
+
 Aegis is a working prototype of the missing infrastructure between "an AI agent decided to trade" and "money actually moved on Monad". Agents are registered identities, every capital-moving action passes a deterministic fail-closed policy gate, every decision is hashed into an HMAC-chained proof ledger anchored to Monad, and a sentinel watcher swarm can lock the whole desk autonomously — faster than a human can react — when exploit-shaped behavior appears.
 
 ## Live demo walkthrough (2 minutes)
+
+*Open the [live demo](https://preview-c-6aad749e-14810412-7397ac081f6b.space-z.ai/) and follow along:*
 
 1. **Overview** — desk telemetry: NAV, verdict mix, anchors, exploit-$ stopped.
 2. **Trading Desk** — three signal agents propose trades; large ones go to a 3-seat LLM council; everything flows through the gate → simulation → broadcast loop. Watch the live event feed.
