@@ -2,8 +2,14 @@
 /media
 /download
 /scripts
+/skills
+/tool-results
+/.zscripts
 /db
 /agent-ctx
+/upload
+/.vercel
 *.log
+*.tsbuildinfo
 worklog.md
 *.bundle
