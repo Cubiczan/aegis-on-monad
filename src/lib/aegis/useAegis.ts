@@ -21,6 +21,7 @@ export interface AegisApi {
   registerAgent: (name: string, domain: string, capabilities: string[]) => void
   setAgentStatus: (id: string, status: Agent['status']) => void
   resolveHitl: (id: string, approve: boolean) => void
+  loadPortfolio: (address: string, cb?: (r: { ok: boolean; error?: string; positions?: number; nav?: number }) => void) => void
   reset: () => void
 }
 
@@ -62,6 +63,7 @@ export function useAegis(): AegisApi {
     registerAgent: (name, domain, capabilities) => emit('agent:register', { name, domain, capabilities }),
     setAgentStatus: (id, status) => emit('agent:status', { id, status }),
     resolveHitl: (id, approve) => emit('hitl:resolve', { id, approve }),
+    loadPortfolio: (address, cb) => emit('zerion:load', { address }, cb),
     reset: () => emit('reset'),
   }
 }

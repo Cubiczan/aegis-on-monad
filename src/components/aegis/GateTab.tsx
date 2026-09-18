@@ -103,6 +103,15 @@ export function GateTab({ api }: { api: AegisApi }) {
             <div className="rounded-md border border-zinc-800 bg-zinc-950/60 p-2.5 font-mono text-[11px] leading-5 text-zinc-500">
               allowlist: {cfg.allowlist.join(' · ')}<br />
               simulation_required: {String(cfg.simulationRequired)} · fail_closed: {String(cfg.failClosed)}<br />
+              live_caps:{' '}
+              <button onClick={() => patch({ liveCaps: !cfg.liveCaps })}
+                className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${cfg.liveCaps ? 'bg-emerald-500/15 text-emerald-300' : 'bg-zinc-800 text-zinc-500'}`}>
+                {String(cfg.liveCaps)}
+              </button>
+              {cfg.liveCaps && s.zerion.portfolio
+                ? <span className="text-teal-400/80"> ← derived from Zerion NAV ${Math.round(s.zerion.portfolio.totalUSD).toLocaleString()}</span>
+                : cfg.liveCaps ? <span className="text-amber-400/70"> ← will apply on next Zerion import</span> : null}
+              <br />
               sim: {s.desk.simLabel}
             </div>
           </div>

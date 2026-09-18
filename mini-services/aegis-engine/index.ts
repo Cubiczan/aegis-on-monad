@@ -15,15 +15,17 @@ import { evaluateGate } from '../../src/lib/aegis/gate'
 import { seedTokens, tickTokens, tokenPrice } from '../../src/lib/aegis/market'
 import { buildDrill, watchersEvaluate } from '../../src/lib/aegis/sentinel'
 import { heuristicCouncil, llmCouncil } from '../../src/lib/aegis/council'
+import { chainLabel, getZerionPortfolioCached, validateWallet, zerionKey, ZerionError } from '../../src/lib/aegis/zerion'
 import {
   DRILL_SCENARIOS, type AegisSnapshot, type Agent, type DrillReport, type DrillScenarioId,
   type FeedItem, type FeedLevel, type GateConfig, type HITLItem, type LedgerEntry,
   type MarketToken, type ProposalStatus, type TrackedProposal, type TradeProposal,
+  type WatcherState, type ZerionPortfolio, type ZerionStatus,
 } from '../../src/lib/aegis/types'
 
 // ---------------------------------------------------------------- state
 
-const TICK_MS: Record<string, number> = { SLOW: 2200, NORMAL: 1300, FAST: 700 }
+const TICK_MS: { SLOW: number; NORMAL: number; FAST: number } = { SLOW: 2200, NORMAL: 1300, FAST: 700 }
 
 const CHAIN_ID = 10143 // Monad testnet
 const RPC_LABEL = 'RPC rotator: testnet-rpc.monad.xyz + rpc.ankr.com/monad_testnet (OSS)'
@@ -57,6 +59,7 @@ let config: GateConfig = {
   allowlist: ['MON', 'WETH', 'WBTC', 'USDC'],
   simulationRequired: true,
   failClosed: true,
+  liveCaps: true,
 }
 
 let agents: Agent[] = []
@@ -69,11 +72,17 @@ let councilQueue: string[] = []
 let councilBusy = false
 let drillActive = false
 let stats = { pass: 0, blocked: 0, hitl: 0, locked: 0, councilLlm: 0, councilHeuristic: 0, anchored: 0, exploitsStoppedUSD: 0 }
-let zerion = { enabled: !!process.env.ZERION_API_KEY, label: '', positionsFetched: 0 }
+const zerion: ZerionStatus = {
+  enabled: !!zerionKey(),
+  live: false,
+  label: '',
+  positionsFetched: 0,
+}
+let zerionPortfolio: ZerionPortfolio | undefined
 
 const velocityByAgent = new Map<string, number[]>()
 const recentByAgent = new Map<string, TradeProposal[]>()
-const watchers = [
+const watchers: WatcherState[] = [
   { id: 'W1', name: 'AnomalyShape', kind: 'ANOMALY' as const, status: 'ONLINE' as const, firing: false, description: 'Size/velocity outliers vs rolling desk baseline' },
   { id: 'W2', name: 'VelocitySpike', kind: 'VELOCITY' as const, status: 'ONLINE' as const, firing: false, description: 'Burst cadence per agent vs 60s rolling window' },
   { id: 'W3', name: 'PatternMatch', kind: 'PATTERN' as const, status: 'ONLINE' as const, firing: false, description: 'Known exploit shapes: drain sweeps, flash-loan pairs, prompt injection' },
@@ -149,6 +158,64 @@ function updateStatus(t: TrackedProposal, status: ProposalStatus) {
   t.status = status
   const idx = proposals.findIndex((x) => x.proposal.id === t.proposal.id)
   if (idx >= 0) proposals[idx] = t
+}
+
+// ---------------------------------------------------------------- zerion live
+
+const round5 = (n: number) => Math.max(500, Math.round(n / 500) * 500)
+const clampN = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
+
+/** Derive the $-denominated CHP caps from the LIVE Zerion NAV — risk envelopes
+ *  that scale with real AUM instead of hand-tuned constants. Importing a new
+ *  envelope also opens a fresh policy epoch (daily counter rebased), exactly as
+ *  a real risk desk would on a policy change. */
+function applyLiveCaps(nav: number, why: string) {
+  if (!config.liveCaps || !Number.isFinite(nav) || nav <= 0) return
+  const perTrade = clampN(round5(nav * 0.02), 5_000, 500_000)
+  const daily = clampN(round5(nav * 0.08), 50_000, 5_000_000)
+  const council = clampN(round5(nav * 0.01), 2_500, 250_000)
+  const epoch = desk.dailyNotionalUSD > daily
+  config.perTradeCapUSD = perTrade
+  config.dailyCapUSD = daily
+  config.councilAboveUSD = council
+  if (epoch) {
+    const was = desk.dailyNotionalUSD
+    desk.dailyNotionalUSD = 0
+    pushFeed('gate', 'info', `POLICY EPOCH · new CHP envelope from live NAV — daily notional counter rebased to $0 (was ${usd(was)})`)
+  }
+  pushFeed('zerion', 'info',
+    `ZERION · CHP caps recalibrated from live NAV ${usd(nav)} (${why}) → per_trade ${usd(perTrade)} · daily ${usd(daily)} · council> ${usd(council)}`)
+}
+
+async function loadZerionPortfolio(address: string): Promise<{ ok: boolean; error?: string; positions?: number; nav?: number }> {
+  const addr = validateWallet(address)
+  if (!addr) return { ok: false, error: 'Enter a 0x… address or a name.eth' }
+  if (!zerion.enabled) return { ok: false, error: 'ZERION_API_KEY is not set on the engine server' }
+  pushFeed('zerion', 'info', `ZERION · fetching live portfolio ${addr.length > 20 ? `${addr.slice(0, 10)}…${addr.slice(-6)}` : addr} via api.zerion.io (Basic auth, server-side key)`)
+  broadcast()
+  try {
+    const pf = await getZerionPortfolioCached(addr)
+    zerionPortfolio = pf
+    zerion.live = true
+    zerion.address = addr
+    zerion.lastError = undefined
+    zerion.positionsFetched = pf.positions.length
+    const shown = addr.startsWith('0x') ? `${addr.slice(0, 10)}…${addr.slice(-6)}` : addr
+    pushFeed('zerion', 'ok', `ZERION LIVE · ${shown} → NAV ${usd(pf.totalUSD)} across ${pf.byChain.length} chains · ${pf.positions.length} positions · ${pf.latencyMs}ms`)
+    const monad = pf.byChain.find((c) => c.id === 'monad')
+    if (monad && monad.usd > 0.5 && pf.totalUSD > 0) {
+      pushFeed('zerion', 'info', `ZERION · ${chainLabel('monad')} exposure: ${usd(monad.usd)} (${((monad.usd / pf.totalUSD) * 100).toFixed(2)}% of NAV) — native chain of the desk`)
+    }
+    applyLiveCaps(pf.totalUSD, 'live NAV import')
+    broadcast()
+    return { ok: true, positions: pf.positions.length, nav: Math.round(pf.totalUSD) }
+  } catch (e) {
+    const msg = e instanceof ZerionError ? e.message : 'Zerion fetch failed (network)'
+    zerion.lastError = msg
+    pushFeed('zerion', 'alert', `ZERION ERROR · ${msg} — CHP keeps last-good caps (fail-closed posture holds)`)
+    broadcast()
+    return { ok: false, error: msg }
+  }
 }
 
 // ---------------------------------------------------------------- gate pipeline
@@ -562,7 +629,10 @@ function tick() {
   tokens = tickTokens(tokens)
   if (desk.tick % 12 === 0) {
     const pv = portfolioValue()
-    pushFeed('zerion', 'info', `ZERION · portfolio context refreshed: ${desk.positions.length} positions, nav ${usd(pv)} → risk engine (exposure-weighted gates)`, { nav: Math.round(pv) })
+    const liveNote = zerion.live && zerionPortfolio
+      ? ` · live zerion NAV ${usd(zerionPortfolio.totalUSD)} (${zerionPortfolio.address?.startsWith('0x') ? `${zerionPortfolio.address.slice(0, 8)}…` : zerionPortfolio.address})`
+      : ''
+    pushFeed('zerion', 'info', `ZERION · portfolio context refreshed: ${desk.positions.length} desk positions, nav ${usd(pv)}${liveNote} → risk engine (exposure-weighted gates)`, { nav: Math.round(pv) })
   }
   if (desk.running && !desk.paused) {
     if (Math.random() < 0.6) emitSignal()
@@ -596,7 +666,7 @@ function snapshot(): AegisSnapshot {
       lastDrill: drills[0],
     },
     stats: { ...stats },
-    zerion,
+    zerion: { ...zerion, portfolio: zerionPortfolio ? { ...zerionPortfolio } : undefined },
   }
 }
 
@@ -625,9 +695,9 @@ function boot() {
     { token: 'WETH', qty: 6, avgPrice: weth * 0.992 },
   ]
   desk.treasuryUSD = desk.initialUSD - 9000 * mon - 6 * weth
-  zerion.label = process.env.ZERION_API_KEY
-    ? 'Zerion API · portfolio context (server-side key, vault positions + history)'
-    : 'Zerion API · portfolio context (local mirror — set ZERION_API_KEY for live fetch)'
+  zerion.label = zerion.enabled
+    ? 'Zerion API · LIVE portfolio context (server-side key → CHP caps + treasury tab)'
+    : 'Zerion API · portfolio context (mirror mode — set ZERION_API_KEY for live fetch)'
   pushFeed('system', 'ok', `AEGIS ONLINE · chain ${CHAIN_ID} (Monad testnet) · ${RPC_LABEL}`)
   pushFeed('system', 'info', `${SIM_LABEL}`)
   pushFeed('system', 'ok', `ERC-8004 registry seeded with ${agents.length} agents · CHP v1.0 gate fail-closed · HMAC ledger head sealed`)
@@ -680,6 +750,9 @@ io.on('connection', (socket) => {
     pushFeed('gate', 'warn', `CHP policy updated · cap ${usd(config.perTradeCapUSD)} · floor ${(config.confidenceFloor * 100).toFixed(0)}% · concentration ${(config.concentrationMaxPct * 100).toFixed(0)}% · council> ${usd(config.councilAboveUSD)}`)
     ack?.({ ok: true })
     broadcast()
+  })
+  socket.on('zerion:load', ({ address }: { address: string }, ack?: (r: { ok: boolean; error?: string; positions?: number; nav?: number }) => void) => {
+    void loadZerionPortfolio(address).then((r) => ack?.(r))
   })
   socket.on('ledger:verify', (ack?: (r: unknown) => void) => {
     const entries: LedgerEntry[] = chain.entries

@@ -12,11 +12,13 @@ import { LedgerTab } from '@/components/aegis/LedgerTab'
 import { SentinelTab } from '@/components/aegis/SentinelTab'
 import { RegistryTab } from '@/components/aegis/RegistryTab'
 import { ContractsTab } from '@/components/aegis/ContractsTab'
+import { PortfolioTab } from '@/components/aegis/PortfolioTab'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'desk', label: 'Trading Desk' },
   { id: 'gate', label: 'Policy Gate' },
+  { id: 'treasury', label: 'Treasury · Zerion' },
   { id: 'ledger', label: 'Proof Ledger' },
   { id: 'sentinel', label: 'Sentinel' },
   { id: 'registry', label: 'Registry' },
@@ -75,6 +77,9 @@ export default function Home() {
               <span className="text-amber-400/90">anchors: {s.anchors.length}</span>
               <span className="text-zinc-500">council LLM: {s.stats.councilLlm} · heuristic: {s.stats.councilHeuristic}</span>
               <span className="text-emerald-400/90">stopped: ${Math.round(s.stats.exploitsStoppedUSD).toLocaleString()}</span>
+              {s.zerion.live && s.zerion.portfolio && (
+                <span className="text-teal-400">zerion LIVE: {s.zerion.portfolio.address.startsWith('0x') ? `${s.zerion.portfolio.address.slice(0, 6)}…${s.zerion.portfolio.address.slice(-4)}` : s.zerion.portfolio.address} · ${Math.round(s.zerion.portfolio.totalUSD).toLocaleString()} NAV</span>
+              )}
               <span className="hidden text-zinc-600 md:inline">{s.desk.rpcLabel}</span>
             </div>
           </div>
@@ -92,6 +97,7 @@ export default function Home() {
             {tab === 'overview' && <OverviewTab api={api} />}
             {tab === 'desk' && <DeskTab api={api} />}
             {tab === 'gate' && <GateTab api={api} />}
+            {tab === 'treasury' && <PortfolioTab api={api} />}
             {tab === 'ledger' && <LedgerTab api={api} />}
             {tab === 'sentinel' && <SentinelTab api={api} />}
             {tab === 'registry' && <RegistryTab api={api} />}

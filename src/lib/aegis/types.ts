@@ -192,6 +192,7 @@ export interface GateConfig {
   allowlist: string[]
   simulationRequired: boolean
   failClosed: boolean
+  liveCaps: boolean           // derive $ caps from live Zerion NAV when connected
 }
 
 export interface FeedItem {
@@ -232,6 +233,43 @@ export interface SentinelState {
   lastDrill?: DrillReport
 }
 
+export interface ZerionPosition {
+  symbol: string
+  name: string
+  qty: number
+  value: number         // USD
+  price: number
+  chain: string         // zerion chain id, e.g. "monad"
+  verified: boolean
+  icon?: string
+  change1d?: number     // percent points, e.g. 4.79 = +4.79%
+}
+
+export interface ZerionPortfolio {
+  address: string
+  totalUSD: number
+  byType: Record<string, number>
+  byChain: { id: string; usd: number }[]
+  positions: ZerionPosition[]
+  changes: {
+    absolute?: Record<string, number>
+    percent?: Record<string, number>
+  }
+  fetchedAt: number
+  latencyMs: number
+  stale: boolean
+}
+
+export interface ZerionStatus {
+  enabled: boolean            // API key present server-side
+  live: boolean               // at least one successful live fetch
+  label: string
+  positionsFetched: number
+  address?: string
+  lastError?: string
+  portfolio?: ZerionPortfolio
+}
+
 export interface AegisStats {
   pass: number
   blocked: number
@@ -257,7 +295,7 @@ export interface AegisSnapshot {
   hitl: HITLItem[]
   sentinel: SentinelState
   stats: AegisStats
-  zerion: { enabled: boolean; label: string; positionsFetched: number }
+  zerion: ZerionStatus
 }
 
 export interface VerifyReport {
