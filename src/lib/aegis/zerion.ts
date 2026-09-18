@@ -136,12 +136,42 @@ export function validateWallet(input: string): string | null {
   return null
 }
 
+// ------------------------------------------------------------- ENS resolution
+
+const ensCache = new Map<string, string>()
+
+/** Zerion v1 only accepts EVM/Solana addresses — resolve ENS-style names to 0x
+ *  first via keyless public resolvers (with fallback + in-memory cache). */
+async function resolveEns(name: string): Promise<string> {
+  const hit = ensCache.get(name)
+  if (hit) return hit
+  const endpoints = [
+    `https://api.ensideas.com/ens/resolve/${encodeURIComponent(name)}`,
+    `https://api.ensdata.net/${encodeURIComponent(name)}`,
+  ]
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(8_000) })
+      if (!res.ok) continue
+      const j = (await res.json()) as { address?: string | null }
+      const a = typeof j.address === 'string' ? j.address : null
+      if (a && looksLikeAddress(a)) {
+        ensCache.set(name, a)
+        return a
+      }
+    } catch { /* try next resolver */ }
+  }
+  throw new ZerionError('ENS_FAIL', `Could not resolve ${name} to an address — try a 0x address instead`)
+}
+
 // ------------------------------------------------------------- public API
 
 export async function fetchZerionPortfolio(address: string, maxPositions = 48): Promise<ZerionPortfolio> {
   const started = Date.now()
-  const addr = validateWallet(address)
-  if (!addr) throw new ZerionError('BAD_INPUT', 'Not a valid 0x address or ENS name')
+  const validated = validateWallet(address)
+  if (!validated) throw new ZerionError('BAD_INPUT', 'Not a valid 0x address or ENS name')
+  // ENS-style input → resolve to a 0x address before hitting the Zerion API
+  const addr = looksLikeAddress(validated) ? validated : await resolveEns(validated)
 
   const enc = encodeURIComponent(addr)
   const [pf, ps] = await Promise.all([
