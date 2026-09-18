@@ -1,5 +1,7 @@
 # ÆGIS on Monad
 
+![ÆGIS on Monad — thumbnail](public/thumbnail.png)
+
 **The trust layer for AI agents that move capital.**
 Metropolis Hackathon · Track 4 — Trust, Identity & AI Infrastructure ($30,000 pool).
 
