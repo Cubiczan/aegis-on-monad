@@ -40,6 +40,19 @@ Two details worth noticing as a judge: the breaker **stayed LOCKED** through the
 
 *Direct file: [`media/demo/aegis-demo.mp4`](media/demo/aegis-demo.mp4) — full walkthrough: multi-agent trading desk → LLM council → fail-closed CHP gate → Zerion live-NAV cap recalibration → HMAC proof ledger anchored on Monad → Sentinel autonomous circuit-breaker drills.*
 
+### Key frames, chapter by chapter
+
+| | |
+|---|---|
+| **0:02 · Cold open** — "AI agents move capital. Who guards the treasury?" | **0:12 · Control-room overview** — four layers, one product |
+| ![Cold open title card](docs/video-frames/01-title-card.jpg) | ![Control-room overview](docs/video-frames/02-overview.jpg) |
+| **0:32 · Trading desk** — signals → council → gate → broadcast, live feed | **0:52 · Policy Gate** — CHP v1.0 kernel, ten fail-closed rules |
+| ![Trading desk live feed](docs/video-frames/03-trading-desk.jpg) | ![CHP policy gate kernel](docs/video-frames/04-policy-gate.jpg) |
+| **1:12 · Treasury · Zerion** — live wallet import recalibrates the caps | **1:32 · Proof Ledger** — HMAC chain, anchors sealed on Monad |
+| ![Zerion live treasury import](docs/video-frames/05-treasury-zerion.jpg) | ![HMAC proof ledger](docs/video-frames/06-proof-ledger.jpg) |
+| **1:42 · Sentinel** — breaker locks the desk autonomously mid-drill | **2:42 · Registry** — live ERC-8004 agent identity + reputation |
+| ![Sentinel autonomous breaker](docs/video-frames/07-sentinel-breaker.jpg) | ![ERC-8004 agent registry](docs/video-frames/08-registry.jpg) |
+
 ⬇ One-click play/download: the **Releases** page of this repo (tag `demo`).
 
 Aegis is a working prototype of the missing infrastructure between "an AI agent decided to trade" and "money actually moved on Monad". Agents are registered identities, every capital-moving action passes a deterministic fail-closed policy gate, every decision is hashed into an HMAC-chained proof ledger anchored to Monad, and a sentinel watcher swarm can lock the whole desk autonomously — faster than a human can react — when exploit-shaped behavior appears.
