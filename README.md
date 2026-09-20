@@ -171,3 +171,26 @@ contracts source (in-app)             # AegisRegistry / AegisAnchor / AegisBreak
 - The demo simulates the Monad testnet loop (blocks, broadcasts, anchor txs) in-process so the full story is demonstrable offline; the contracts in the **Contracts** tab are the real deployment targets on Monad mainnet.
 - Signal agents, prices and PnL are simulated; the treasury portfolio, caps, council and every gate/ledger behavior are real.
 - Built for judges who click things: every claim on the Overview tab has a tab where you can verify it.
+
+## Propagation notes (wave B)
+
+- **Row 9 (deny-as-audit-event) — already present, no change needed.** The
+  gate refuses with first-class recorded outcomes rather than reverts:
+  four-verdict gating (PASS / LOCKED / BLOCKED / HITL_REQUIRED) in
+  `mini-services/aegis-engine/index.ts`, with BLOCKED decisions tallied,
+  fed, and persisted through the proof layer. Nothing to add; reopens only
+  if a verdict path starts dropping refusals from the ledger.
+- **Row 10 (sealed evidence envelopes) — already present, no change needed.**
+  `src/lib/aegis/ledger.ts` seals every decision into an HMAC-SHA256-chained
+  ledger with canonical-JSON decision hashing, and `AegisAnchor`
+  (`src/lib/aegis/contracts.ts`) batches the decision-hash roots on Monad
+  (`anchor`, `event Anchored`, `isAnchored`) — permanent, third-party-verifiable
+  sealing of the evidence chain. Reopens only if the HMAC key handling needs
+  externalization beyond `AEGIS_LEDGER_KEY`.
+- **Row 6 (dual-authority governor) — reversed.** The row's condition (an
+  on-chain policy surface that vetoes individual transfers) does not hold:
+  aegis's contracts pause globally via the 2-of-3 `AegisBreaker` and anchor
+  evidence via `AegisAnchor`, while per-transfer gating lives in the
+  engine-side CHP kernel. There is no chain-boundary policy hook to install
+  the governor into. Reopens if the desk moves execution behind an on-chain
+  wallet contract with per-transfer policy hooks.
